@@ -15,4 +15,17 @@ end
 
 httpget = roblox_httpget or httpget_loaders or httpget or get or https_get or httpsget or gethttp -- Add your HTTP function here
 
-local Serializer = --later bruh forgot to copy url```
+local Serializer = loadstring(httpget("https://github.com/076c/Instance2Lua/blob/main/source.luau"))()
+
+local path = game:service("Workspace"):WaitForChild("Folder")
+local OPTIONS: Serializer.Options = {
+    ["WrapInFunction"] = true, -- If yes it will wrap code in a function
+    ["FunctionName"] = "", -- Function Name (only valid if WrapInFunction equals true)
+    ["UseUniversalNaming"] = false,
+    ["IndentUsingSpaces"] = true, -- Indents using spaces e.x: [   ] Normal: [\t]
+    ["RefByClass"] = false, -- false: l_FolderName_0 true: l_Folder_0
+    ["ShowInstancesSerialized"] = true, -- Shows you all the Instances that were serialized.
+    ["ShowInstancesSerializedAmount"] = true -- Shows the amount of Instances serialized
+}
+local serialized = Serializer.SerializeFolder(path, OPTIONS)
+```
