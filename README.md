@@ -29,3 +29,7 @@ local OPTIONS: Serializer.Options = {
 }
 local serialized = Serializer.SerializeFolder(path, OPTIONS)
 ```
+# Requirements
+
+- HttpGet Function that gets HTTP stuff (or just paste the entire 3k loc into a module and require it)
+- loadstring (or do the first step)
