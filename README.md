@@ -33,3 +33,8 @@ local serialized = Serializer.SerializeFolder(path, OPTIONS)
 
 - HttpGet Function that gets HTTP stuff (or just paste the entire 3k loc into a module and require it)
 - loadstring (or do the first step)
+
+# Bugs
+
+1. It declares the model/Folder AFTER the properties are set
+2. Doesnt Serialize Model and Folder Children
