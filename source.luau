@@ -22,18 +22,6 @@ local CodeFormats = { -- These are all the code formats
     ["VariableName"] = "l_%s_%d", -- lol this looks good totally not oracle frfr duh
     ["UniversalVariableName"] = "v%d"
 }
-
-type OPTIONS = {
-    ["WrapInFunction"]: boolean | nil, -- If yes it will wrap code in a function
-    ["FunctionName"]: string | nil, -- Function Name (only valid if WrapInFunction equals true)
-    ["UseUniversalNaming"]: boolean | nil,
-    ["IndentUsingSpaces"]: boolean | nil, -- Indents using spaces e.x: [   ] Normal: [\t]
-    ["RefByClass"]: boolean | nil, -- false: l_FolderName_0 true: l_Folder_0
-    ["ShowInstancesSerialized"]: boolean | nil, -- Shows you all the Instances that were serialized.
-    ["ShowInstancesSerializedAmount"]: boolean | nil -- Shows the amount of Instances serialized
-}
-
-
 type Property = {
     ["Class"]: string,
     ["Name"]: string,
@@ -135,92 +123,104 @@ function Serialize_Instance<Instance>(Instance : Part, Options, TotalVars)
         local ClassName = string.format("'%s'", Instance.ClassName)
         CodeBracket_Decl = string.format(CodeFormats.NewInstanceOfClass, Decl_Var, ClassName)
     end
-    for i, v in pairs(Attributes) do
-        local toset
-        local type_of = typeof(v)
-        if type_of == "boolean" then
-            toset = v
-        elseif type_of == "string" then
-            toset = string.format("'%s'", v)
-        elseif type_of == "number" then
-            toset = tostring(v)
-        elseif type_of == "Color3" then
-            local stuff = string.split(tostring(v), ",")
-            for i, v in pairs(stuff) do
-                v:gsub(" ", "")
-            end
-            toset = string.format("Color3.new(%s,%s,%s)", tostring(stuff[1]), tostring(stuff[2]), tostring(stuff[3]))
-        elseif type_of == "Vector3" then
-            local stuff = string.split(tostring(v), ",")
-            for i, v in pairs(stuff) do
-                v:gsub(" ", "")
-            end
-            toset = string.format("Vector3.new(%s,%s,%s)", tostring(stuff[1]), tostring(stuff[2]), tostring(stuff[3]))
-        elseif type_of == 'CFrame' then
-            local stuff = string.split(tostring(v), ",")
-            for i, v in pairs(stuff) do
-                v:gsub(" ", "")
-            end
-            toset = string.format("CFrame.new(%s,%s,%s)", tostring(stuff[1]), tostring(stuff[2]), tostring(stuff[3]))
-        else
-            toset = tostring(v)
-        end
-        table.insert(Code, string.format(CodeFormats.SetAttribute, Decl_Var, string.format("'%s'", tostring(i)), tostring(toset)))
-    end
-    for i, v : Property in pairs(Properties) do
-        local isReadOnly = false
-        for i, v in pairs(v.tags) do
-            if v == "readonly" or v == "notbrowsable" or v == "deprecated" then
-                isReadOnly = true
-            end
-        end
-        if v["type"] ~= "Function" and v["type"] ~= "Event" and not isReadOnly and v["Name"] ~= "Clone" then -- Iterate over Functions and Events
-            local PropertyName = v.Name
-            local is, val = pcall(function()
-                return Instance[PropertyName]
-            end)
+    local function SerializeInstance(Attributes, Instance)
+        for i, v in pairs(Attributes) do
             local toset
-            local type_of = typeof(val)
+            local type_of = typeof(v)
             if type_of == "boolean" then
                 toset = v
             elseif type_of == "string" then
-                toset = string.format("'%s'", val)
+                toset = string.format("'%s'", v)
             elseif type_of == "number" then
-                toset = tostring(val)
+                toset = tostring(v)
             elseif type_of == "Color3" then
-                local stuff = string.split(tostring(val), ",")
+                local stuff = string.split(tostring(v), ",")
                 for i, v in pairs(stuff) do
                     v:gsub(" ", "")
                 end
                 toset = string.format("Color3.new(%s,%s,%s)", tostring(stuff[1]), tostring(stuff[2]), tostring(stuff[3]))
             elseif type_of == "Vector3" then
-                local stuff = string.split(tostring(val), ",")
+                local stuff = string.split(tostring(v), ",")
                 for i, v in pairs(stuff) do
                     v:gsub(" ", "")
                 end
                 toset = string.format("Vector3.new(%s,%s,%s)", tostring(stuff[1]), tostring(stuff[2]), tostring(stuff[3]))
             elseif type_of == 'CFrame' then
-                local stuff = string.split(tostring(val), ",")
+                local stuff = string.split(tostring(v), ",")
                 for i, v in pairs(stuff) do
                     v:gsub(" ", "")
                 end
                 toset = string.format("CFrame.new(%s,%s,%s)", tostring(stuff[1]), tostring(stuff[2]), tostring(stuff[3]))
             else
-                toset = "'" .. tostring(val) .. "'"
+                toset = tostring(v)
             end
-            if is == true then
-                local formatted = string.format(CodeFormats.SetValue, Decl_Var, tostring(PropertyName), tostring(val))
-                table.insert(Code, formatted)
+            table.insert(Code, string.format(CodeFormats.SetAttribute, Decl_Var, string.format("'%s'", tostring(i)), tostring(toset)))
+        end
+        for i, v : Property in pairs(Properties) do
+            local isReadOnly = false
+            for i, v in pairs(v.tags) do
+                if v == "readonly" or v == "notbrowsable" or v == "deprecated" then
+                    isReadOnly = true
+                end
+            end
+            if v["type"] ~= "Function" and v["type"] ~= "Event" and not isReadOnly and v["Name"] ~= "Clone" then -- Iterate over Functions and Events
+                local PropertyName = v.Name
+                local is, val = pcall(function()
+                    return Instance[PropertyName]
+                end)
+                local toset
+                local type_of = typeof(val)
+                if type_of == "boolean" then
+                    toset = v
+                elseif type_of == "string" then
+                    toset = string.format("'%s'", val)
+                elseif type_of == "number" then
+                    toset = tostring(val)
+                elseif type_of == "Color3" then
+                    local stuff = string.split(tostring(val), ",")
+                    for i, v in pairs(stuff) do
+                        v:gsub(" ", "")
+                    end
+                    toset = string.format("Color3.new(%s,%s,%s)", tostring(stuff[1]), tostring(stuff[2]), tostring(stuff[3]))
+                elseif type_of == "Vector3" then
+                    local stuff = string.split(tostring(val), ",")
+                    for i, v in pairs(stuff) do
+                        v:gsub(" ", "")
+                    end
+                    toset = string.format("Vector3.new(%s,%s,%s)", tostring(stuff[1]), tostring(stuff[2]), tostring(stuff[3]))
+                elseif type_of == 'CFrame' then
+                    local stuff = string.split(tostring(val), ",")
+                    for i, v in pairs(stuff) do
+                        v:gsub(" ", "")
+                    end
+                    toset = string.format("CFrame.new(%s,%s,%s)", tostring(stuff[1]), tostring(stuff[2]), tostring(stuff[3]))
+                else
+                    toset = "'" .. tostring(val) .. "'"
+                end
+                if is == true then
+                    local formatted = string.format(CodeFormats.SetValue, Decl_Var, tostring(PropertyName), tostring(val))
+                    if v["Name"] == "Parent" then
+                        string.format(CodeFormats.SetValue, Decl_Var, tostring(PropertyName), string.format("game['%s']", tostring(val)))
+                    end
+                    table.insert(Code, formatted)
+                end
             end
         end
+        TotalVars += 1
+        table.insert(Code, CodeBracket_Decl)
     end
-    TotalVars += 1
-    table.insert(Code, CodeBracket_Decl)
+    local function SerializeInstances(Instance)
+        SerializeInstance(Instance:GetAttributes(), Instance)
+        for i, v in pairs(Instance:GetChildren()) do
+            SerializeInstances(v)
+        end
+    end
+    SerializeInstances(Instance)
     return Code, TotalVars
 end
 
 local Header = [[
--- Generated using Instace2Lua made by @legalcarbomb on discord.
+-- Generated using Instance2Lua made by @legalcarbomb on discord.
 -- Took %d seconds
 ]]
 
@@ -276,8 +276,6 @@ local function SerializeFolderToScript(Folder : Folder, Options)
     local formattedHeader = string.format(Header, timetaken)
     return formattedHeader ..  header1 .. "\n" .. header2 .. "\n" .. table.concat(Code, "\n")
 end
-
-export type Options = OPTIONS
 
 return {
     SerializeFolder = SerializeFolderToScript,
