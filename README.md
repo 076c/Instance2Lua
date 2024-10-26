@@ -19,7 +19,7 @@ end
 
 httpget = roblox_httpget or httpget_loaders or httpget or get or https_get or httpsget or gethttp -- Add your HTTP function here
 
-local Serializer = loadstring(httpget("https://github.com/076c/Instance2Lua/blob/main/source.luau"))
+local Serializer = loadstring(httpget("https://raw.githubusercontent.com/076c/Instance2Lua/refs/heads/main/source.luau"))()
 
 local path = game:service("Workspace"):WaitForChild("Folder")
 local OPTIONS: Serializer.Options = {
