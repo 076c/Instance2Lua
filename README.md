@@ -1,6 +1,10 @@
 # Instance2Lua
 Converts Roblox Instances to Lua Code using the latest API dump (Relies on HttpService)
 
+# CHANGES
+
+- Fixed Options not working
+- (W.I.P) Add Option to disable Serializing Folder Descendants (Children of children)
 
 # How do i use it?
 
