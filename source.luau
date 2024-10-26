@@ -277,6 +277,8 @@ local function SerializeFolderToScript(Folder : Folder, Options)
     return formattedHeader ..  header1 .. "\n" .. header2 .. "\n" .. table.concat(Code, "\n")
 end
 
+export type Options = OPTIONS
+
 return {
     SerializeFolder = SerializeFolderToScript,
     SerializeInstance = Serialize_Instance
