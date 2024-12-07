@@ -218,7 +218,7 @@ function Serialize_Instance<Instance>(Instance : Part, Options, TotalVars)
 end
 
 local Header = [[
--- Generated using Instance2Lua made by @legalcarbomb on discord.
+-- Generated using Instance2Lua: https://github.com/076c/Instance2Lua/
 -- Took %d seconds
 ]]
 
