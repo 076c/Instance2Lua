@@ -47,8 +47,6 @@ local function GetAllTypes()
     return Types
 end
 
-print(GetAllTypes())
-
 local function Path(path)
     local Path = path
     local RealPath = string.split(Path, ".")
