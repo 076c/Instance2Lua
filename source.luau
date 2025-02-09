@@ -100,7 +100,7 @@ function HandleValue(val)
     end
 end
 
-function Serialize_Instance<Instance>(Instance : Part, Options, TotalVars)
+function Serialize_Instance<Instance>(Instance : Instance, Options, TotalVars)
     Options = Options or TEMPLATE
     local Code = {} -- Here we will insert our bits and pieces of code.
     ValidateOptions(Options)
