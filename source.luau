@@ -228,7 +228,6 @@ local function SerializeFolderToScript(Folder : Folder, Options)
     local InstancesSerialized = {}
     local Code = {} -- Here we will insert our bits and pieces of code.
     ValidateOptions(Options)
-    print(Options)
     local TotalVariables = 0
     local Indent = 0
     local function table_insert(tabl, value)
