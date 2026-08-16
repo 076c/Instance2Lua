@@ -26,3 +26,4 @@ print(Instance2Lua.AST.NodeToString(colorSyntaxTree))
 # NOTE:
 - The API will change over time, with new adjustments since this rewrite was kind of rushed.
 - There are a lot of unhandled Roblox types (including Instances, which will be added last).
+- The AST follows a Roslyn-style naming convention adapted to Luau (to not complicate things).
