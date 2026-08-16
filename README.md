@@ -1,44 +1,28 @@
 # Instance2Lua
-Converts Roblox Instances to Lua Code using the latest API dump (Relies on HttpService)
+Instance2Lua is a module that aims to reconstruct any Instance (or Roblox data type) into static Lua code that can accurately restore the Instance
+to it's original state.
 
-# CHANGES
+# Where is the source code?
+The old (and deprecated) source code can be found within `source.luau`. The new rewrite version (which is work in progress) can be found under `rewrite.luau`.
 
-- Fixed Options not working
-- (W.I.P) Add Option to disable Serializing Folder Descendants (Children of children)
+# How does this work?
+Instance2Lua uses a custom-written Abstract Syntax Tree module to interpret any datatype with statements and expressions. You can
+then run optimizations on that tree, or convert it to Lua source code using to `NodeToString` function.
 
-# How do i use it?
+# Why?
+Instance2Lua was originally designed for places where importing Roblox XML-encoded/binary-encoded models is impossible (for example in Scripts).
+This aims to fix that by encoding the instances in a syntax tree instead of XML/binary.
+
+# Usage
+To use this, simply paste the source code from this GitHub repository in your game (or alternatively, make the script perform a `require`-`loadstring` chain) to import
+the module.
 
 ```luau
--- [[ Example Usage ]]
-local roblox_httpget = function(url)
-    return game.HttpService:GetAsync(url, true)
-end
-local httpget_loaders = function(url)
-    return game:HttpGet(url, true)
-end
+local colorSyntaxTree = Instance2Lua:SerializeValueIntoExpression(Color3.new(1, 1, 1))
 
-httpget = roblox_httpget or httpget_loaders or httpget or get or https_get or httpsget or gethttp -- Add your HTTP function here
-
-local Serializer = loadstring(httpget("https://raw.githubusercontent.com/076c/Instance2Lua/refs/heads/main/source.luau"))()
-
-local path = game:service("Workspace"):WaitForChild("Folder")
-local OPTIONS: Serializer.Options = {
-    ["WrapInFunction"] = true, -- If yes it will wrap code in a function
-    ["FunctionName"] = "", -- Function Name (only valid if WrapInFunction equals true)
-    ["UseUniversalNaming"] = false,
-    ["IndentUsingSpaces"] = true, -- Indents using spaces e.x: [   ] Normal: [\t]
-    ["RefByClass"] = false, -- false: l_FolderName_0 true: l_Folder_0
-    ["ShowInstancesSerialized"] = true, -- Shows you all the Instances that were serialized.
-    ["ShowInstancesSerializedAmount"] = true -- Shows the amount of Instances serialized
-}
-local serialized = Serializer.SerializeFolder(path, OPTIONS)
+print(Instance2Lua.AST.NodeToString(colorSyntaxTree))
 ```
-# Requirements
 
-- HttpGet Function that gets HTTP stuff (or just paste the entire 3k loc into a module and require it)
-- loadstring (or do the first step)
-
-# Bugs
-
-1. It declares the model/Folder AFTER the properties are set
-2. Doesnt Serialize Model and Folder Children
+# NOTE:
+- The API will change over time, with new adjustments since this rewrite was kind of rushed.
+- There are a lot of unhandled Roblox types (including Instances, which will be added last).
