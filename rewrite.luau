@@ -200,7 +200,7 @@ local function formatQuotedString(str: string): string
 end
 
 -- Constants
-local API_DUMP = HttpService:JSONDecode(HttpService:GetAsync("https://raw.githubusercontent.com/MaximumADHD/Roblox-Client-Tracker/refs/heads/roblox/API-Dump.json", true))
+-- local API_DUMP = HttpService:JSONDecode(HttpService:GetAsync("https://raw.githubusercontent.com/MaximumADHD/Roblox-Client-Tracker/refs/heads/roblox/API-Dump.json", true))
 
 local INDENT_STRING = string.rep(" ", 4)
 
@@ -222,10 +222,28 @@ local PROPERTIES = {
 		"CreatorType",
 		"CreatorId",
 		"Limit",
+	},
+	
+	DockWidgetPluginGuiInfo = {
+		"InitialEnabled",
+		"InitialEnabledShouldOverrideRestore",
+		"InitialDockState",
+		"FloatingXSize",
+		"FloatingYSize",
+		"MinWidth",
+		"MinHeight",
+	},
+	
+	FloatCurveKey = {
+		"RightTangent",
+		"LeftTangent"
 	}
 }
 --[[
-	-- Remap enum entries to avoid O(1) wherever possible
+	-- This has been replaced by the faster O(1)
+	-- Enum mapping instead.
+	
+	-- Remap enum entries to avoid O(n) wherever possible
 	local ENUM_ENTRIES = {}
 
 	for _, enum in ipairs(API_DUMP.Enums) do
@@ -579,6 +597,13 @@ function Instance2Lua:SerializeValueIntoExpression<T>(value: T): Expression
 		return ast.NumberNode(value)
 	elseif type == "boolean" then
 		return ast.BooleanNode(value)
+	elseif type == "function" then
+		-- ! Functions aren't representable statically.
+		-- ! Roblox doesn't allow this.
+		return ast.GlobalAccessNode("FUNCTION_PTR")
+	elseif type == "thread" then
+		-- Same as above.
+		return ast.GlobalAccessNode("THREAD_PTR")
 	elseif type == "Vector3" then
 		return ast.FunctionInvocationNode(
 			ast.ElementAccessNode(ast.GlobalAccessNode("Vector3"), ast.StringNode("new")),
@@ -721,7 +746,7 @@ function Instance2Lua:SerializeValueIntoExpression<T>(value: T): Expression
 		)
 	elseif type == "EnumItem" then
 		-- This method doesn't use the Roblox API
-		-- although it's very bad and not recommended
+		-- although it's very bad and not recommended.
 		return ast.ElementAccessNode(
 			ast.ElementAccessNode(
 				ast.GlobalAccessNode("Enum"),
@@ -767,6 +792,169 @@ function Instance2Lua:SerializeValueIntoExpression<T>(value: T): Expression
 				end)
 			)
 		)
+	elseif type == "DateTime" then
+		if (value :: DateTime).UnixTimestampMillis then
+			return ast.FunctionInvocationNode(
+				ast.ElementAccessNode(
+					ast.GlobalAccessNode("DateTime"),
+					ast.StringNode("fromUnixTimestampMillis")
+				),
+				ast.ExpressionListNode(
+					ast.NumberNode((value :: DateTime).UnixTimestampMillis)
+				)
+			)
+		else
+			return ast.FunctionInvocationNode(
+				ast.ElementAccessNode(
+					ast.GlobalAccessNode("DateTime"),
+					ast.StringNode("fromUnixTimestamp")
+				),
+				ast.ExpressionListNode(
+					ast.NumberNode((value :: DateTime).UnixTimestamp)
+				)
+			)
+		end
+	elseif type == "DockWidgetPluginGuiInfo" then
+		local properties = {}
+		
+		for _, property in ipairs(PROPERTIES.DockWidgetPluginGuiInfo) do
+			local value = (value :: any)[property]
+			
+			if value then
+				table.insert(properties, Instance2Lua:SerializeValueIntoExpression(property))
+			end
+		end
+		
+		return ast.FunctionInvocationNode(
+			ast.ElementAccessNode(
+				ast.GlobalAccessNode("DockWidgetPluginGuiInfo"),
+				ast.StringNode("new")
+			),
+			
+			ast.ExpressionListNode(
+				unpack(properties)
+			)
+		)
+	elseif type == "Enums" then
+		-- ? This may not be correct, fact check this part.
+		return ast.GlobalAccessNode("Enum")
+	elseif type == "Faces" then
+		local normalIds = {}
+		
+		for _, property in ipairs({
+			"Top",
+			"Bottom",
+			"Left",
+			"Right",
+			"Front",
+			"Back"
+		}) do
+			if (value :: any)[property] then
+				-- Fast method: Create enum directly
+				table.insert(
+					normalIds,
+					ast.ElementAccessNode(
+						ast.ElementAccessNode(
+							ast.GlobalAccessNode("Enum"),
+							ast.StringNode("NormalId")
+						),
+						ast.StringNode(property)
+					)
+				)
+			end
+		end
+		
+		return ast.FunctionInvocationNode(
+			ast.ElementAccessNode(
+				ast.GlobalAccessNode("Faces"),
+				ast.StringNode("new")
+			),
+			ast.ExpressionListNode(unpack(normalIds))
+		)
+	elseif type == "FloatCurveKey" then
+		-- RightTangent and LeftTangent are only setters
+		-- if the interpolation mode is cubic.
+		
+		-- Argument order: (time, value, interpolation)
+		
+		local var = ast.GlobalAccessNode("floatCurveKey")
+		
+		local properties: { Statement } = {}
+		
+		if (value :: FloatCurveKey).Interpolation == Enum.KeyInterpolationMode.Cubic then
+			for _, property in ipairs(PROPERTIES.FloatCurveKey) do
+				local value = (value :: any)[property]
+
+				if value then
+					table.insert(
+						properties,
+						ast.AssignmentNode(
+							ast.ElementAccessNode(
+								var,
+								ast.StringNode(property)
+							),
+							Instance2Lua:SerializeValueIntoExpression(value),
+							false
+						)
+					)
+				end
+			end
+		end
+		
+		return ast.FunctionInvocationNode(
+			ast.ClosureNode(
+				ast.StatementListNode(
+					ast.AssignmentNode(
+						var,
+						ast.FunctionInvocationNode(
+							ast.ElementAccessNode(
+								ast.GlobalAccessNode("FloatCurveKey"),
+								ast.StringNode("new")
+							),
+							ast.ExpressionListNode(
+								ast.NumberNode((value :: FloatCurveKey).Time),
+								ast.NumberNode((value :: FloatCurveKey).Value),
+								
+								-- Fast enum indexing: Avoid calling serialize
+								-- function to make things faster and avoid recursion.
+								ast.ElementAccessNode(
+									ast.ElementAccessNode(
+										ast.GlobalAccessNode("Enum"),
+										ast.StringNode("KeyInterpolationMode")
+									),
+									ast.StringNode((value :: FloatCurveKey).Interpolation.Name)
+								)
+							)
+						),
+						true
+					),
+					unpack(chain((properties :: any), {
+						ast.ReturnNode(ast.ExpressionListNode(var))
+					}))
+				),
+				ast.ExpressionListNode(),
+				false
+			),
+			ast.ExpressionListNode()
+		)
+	elseif type == "NumberRange" then
+		return ast.FunctionInvocationNode(
+			ast.ElementAccessNode(
+				ast.GlobalAccessNode("NumberRange"),
+				ast.StringNode("new")
+			),
+			ast.ExpressionListNode(
+				ast.NumberNode((value :: NumberRange).Min),
+				ast.NumberNode((value :: NumberRange).Max)
+			)
+		)
+	elseif type == "RBXScriptConnection" then
+		-- ! RBXScriptConnections and any function
+		-- ! object cannot be statically represented as
+		-- ! Luau doesn't offer a way to retrieve the bytecode
+		-- ! of functions.
+		
+		return ast.GlobalAccessNode("RBX_SCRIPT_CONNECTION")
 	else -- unknown
 		error(`=> Instance2Lua: Encountered unknown value type when serializing: {type}`)
 	end
