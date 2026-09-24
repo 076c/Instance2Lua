@@ -88,7 +88,7 @@ export type MethodInvokationNode = ExpressionBase & {
 }
 
 export type Expression =
-	NilNode
+	| NilNode
 	| NumberNode
 	| StringNode
 	| BooleanNode
@@ -124,7 +124,7 @@ export type ReturnNode = StatementBase & {
 }
 
 export type Statement =
-	AssignmentNode
+	| AssignmentNode
 	| StatementListNode
 	| ReturnNode
 
@@ -146,7 +146,7 @@ export type ExpressionTableEntryKind = TableEntryKindBase & {
 }
 
 export type TableEntryKind =
-	KeyedTableEntryKind
+	| KeyedTableEntryKind
 	| ExpressionTableEntryKind
 
 -- Services
@@ -699,7 +699,7 @@ function Instance2Lua:SerializeValueIntoExpression<T>(value: T): Expression
 			ast.ExpressionListNode(unpack(arguments))
 		)
 	elseif type == "CatalogSearchParams" then
-		local var = ast.GlobalAccessNode("searchParams")
+		local var = ast.GlobalAccessNode("SearchParams")
 		
 		local propertyAssignments = {}
 		
@@ -787,9 +787,9 @@ function Instance2Lua:SerializeValueIntoExpression<T>(value: T): Expression
 				ast.StringNode("new")
 			),
 			ast.ExpressionListNode(
-				map((value :: ColorSequence).Keypoints, function(keyPoint: ColorSequenceKeypoint): Expression
+				unpack(map((value :: ColorSequence).Keypoints, function(keyPoint: ColorSequenceKeypoint): Expression
 					return Instance2Lua:SerializeValueIntoExpression(keyPoint)
-				end)
+				end))
 			)
 		)
 	elseif type == "DateTime" then
@@ -874,10 +874,10 @@ function Instance2Lua:SerializeValueIntoExpression<T>(value: T): Expression
 	elseif type == "FloatCurveKey" then
 		-- RightTangent and LeftTangent are only setters
 		-- if the interpolation mode is cubic.
-		
+		-- 
 		-- Argument order: (time, value, interpolation)
 		
-		local var = ast.GlobalAccessNode("floatCurveKey")
+		local var = ast.GlobalAccessNode("FloatCurveKey")
 		
 		local properties: { Statement } = {}
 		
